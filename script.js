@@ -65,7 +65,7 @@ function handleButtonPress(value) {
       //      if (currentInput === "-0") {
       //        currentInput = "-";
       //      }
-      if (currentInput.length < 9) {
+      if (currentInput.length < 9 && operator != "=") {
         currentInput += value;
         display.textContent = currentInput;
         displayExpression.textContent += `${value}`;
@@ -166,27 +166,42 @@ function handleButtonPress(value) {
     number & operator & number & = => result of num1 + num2 then repeat + num2 with result
     number & operator & number & operator & ... => result of num1 + num2, etc
 */
+      if (!displayExpression.textContent.endsWith(`${operator} `)) {
+        if (result && storedValue) {
+          prevOperator = operator;
+          operator = value;
+          storedValue = result;
+          result = calculate(storedValue, prevOperator, currentInput);
+          if (result.toString().length > 9) {
+            result = parseFloat(result).toPrecision(4);
+          }
+          display.textContent = result;
+          displayExpression.textContent += ` ${operator} `;
 
-      if (result) {
-        storedValue = result;
-        result = calculate(storedValue, operator, currentInput);
-        display.textContent = result;
+          currentInput = "";
+        } else if (storedValue && currentInput) {
+          prevOperator = operator;
+          operator = value;
+          result = calculate(storedValue, prevOperator, currentInput);
+          if (result.toString().length > 9) {
+            result = parseFloat(result).toPrecision(4);
+          }
+          display.textContent = result;
+          displayExpression.textContent += ` ${operator} `;
 
-        storedValue = "";
-        currentInput = "";
+          currentInput = "";
+        } else if (currentInput) {
+          storedValue = currentInput;
+          operator = value;
+          displayExpression.textContent += ` ${operator} `;
 
-        operator = null;
-      } else if (currentInput && storedValue && operator) {
-        //        displayExpression.textContent += currentInput;
-        result = calculate(storedValue, operator, currentInput);
-        if (typeof Number(result) !== number) {
+          currentInput = "";
+        } else if (displayExpression.textContent.endsWith(`${operator} `)) {
+          let arr = displayExpression.textContent.split(" ");
+          displayExpression.textContent = arr.slice(0, -2).join(" ");
+          operator = value;
+          displayExpression.textContent += ` ${operator} `;
         }
-        display.textContent = result;
-
-        storedValue = "";
-        currentInput = "";
-
-        operator = null;
       }
       break;
     case "±":
