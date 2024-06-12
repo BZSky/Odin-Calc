@@ -1,8 +1,10 @@
 const controlsContainer = document.querySelector(".controls-container");
 
 let currentInput = "";
+let prevOperator = null;
 let operator = null;
 let storedValue = "";
+let result = "";
 let display = document.querySelector(".results-container").firstElementChild;
 let displayExpression =
   document.querySelector(".results-container").lastElementChild;
@@ -41,16 +43,11 @@ const factorial = function (num) {
   return rval;
 };
 
-function displayButtonPress(value) {
-  /*     if value is number && firstNum === 0
-    else if value is number && firstNum !== 0
-    else if value is !number && firstNum !== 0
-        if value is +-
-        else if value is .
-        else if value is %
-        else if value is +-
-        else if value is AC
-        else if value is = */
+function handleDisplayExpression(value) {
+  /* TODO
+   operator = save 0 & operator
+    number -> operator -> number -> operator = calculate prev numbers and save result as stored value & new operator 
+      */
 }
 
 function handleButtonPress(value) {
@@ -65,38 +62,217 @@ function handleButtonPress(value) {
     case "7":
     case "8":
     case "9":
-      currentInput += value;
-      display.textContent = currentInput;
+      //      if (currentInput === "-0") {
+      //        currentInput = "-";
+      //      }
+      if (currentInput.length < 9) {
+        currentInput += value;
+        display.textContent = currentInput;
+        displayExpression.textContent += `${value}`;
+      }
       break;
     case "+":
     case "-":
+    case "×":
     case "*":
+    case "÷":
     case "/":
-      if (currentInput) {
-        storedValue = currentInput;
+      if (value == "×") {
+        value = "*";
+      } else if (value == "÷") {
+        value = "/";
+      }
+      if (!prevOperator) {
+        if (result && storedValue) {
+          prevOperator = operator;
+          operator = value;
+          storedValue = result;
+          result = calculate(storedValue, prevOperator, currentInput);
+          if (result.toString().length > 9) {
+            result = parseFloat(result).toPrecision(4);
+          }
+          display.textContent = result;
+          displayExpression.textContent += ` ${operator} `;
+
+          currentInput = "";
+        } else if (storedValue && currentInput) {
+          prevOperator = operator;
+          operator = value;
+          result = calculate(storedValue, prevOperator, currentInput);
+          if (result.toString().length > 9) {
+            result = parseFloat(result).toPrecision(4);
+          }
+          display.textContent = result;
+          displayExpression.textContent += ` ${operator} `;
+
+          currentInput = "";
+        } else if (currentInput) {
+          storedValue = currentInput;
+          operator = value;
+          displayExpression.textContent += ` ${operator} `;
+
+          currentInput = "";
+        } else if (displayExpression.textContent.endsWith(`${operator} `)) {
+          let arr = displayExpression.textContent.split(" ");
+          displayExpression.textContent = arr.slice(0, -2).join(" ");
+          operator = value;
+          displayExpression.textContent += ` ${operator} `;
+        }
+      } else if (currentInput) {
+        if (result && storedValue) {
+          prevOperator = operator;
+          operator = value;
+          storedValue = result;
+          result = calculate(storedValue, prevOperator, currentInput);
+          if (result.toString().length > 9) {
+            result = parseFloat(result).toPrecision(4);
+          }
+          currentInput = "";
+
+          display.textContent = result;
+          displayExpression.textContent += ` ${operator} `;
+        } else if (storedValue) {
+          prevOperator = operator;
+          operator = value;
+          result = calculate(storedValue, prevOperator, currentInput);
+          if (result.toString().length > 9) {
+            result = parseFloat(result).toPrecision(4);
+          }
+          currentInput = "";
+
+          display.textContent = result;
+          displayExpression.textContent += ` ${operator} `;
+        }
+      } else if (displayExpression.textContent.endsWith(`${operator} `)) {
+        // rewrite with str.slice
+        let arr = displayExpression.textContent.split(" ");
+        displayExpression.textContent = arr.slice(0, -2).join(" ");
         operator = value;
-        displayExpression.textContent = `${currentInput} ${operator} `;
-        currentInput = "";
+        displayExpression.textContent += ` ${operator} `;
       }
       break;
     case "AC":
+    case "Escape":
       currentInput = "";
       storedValue = "";
+      result = "";
+      prevOperator = null;
       operator = null;
       display.textContent = "0";
       displayExpression.textContent = "";
       break;
     case "=":
-      if (currentInput && storedValue && operator) {
-        displayExpression.textContent += currentInput;
-        currentInput = calculate(storedValue, operator, currentInput);
-        display.textContent = currentInput;
+      /*    number & operator & = & = & = ...  => result of num1 + num1 then repeat + num1 with result
+    number & operator & number & = => result of num1 + num2 then repeat + num2 with result
+    number & operator & number & operator & ... => result of num1 + num2, etc
+*/
+
+      if (result) {
+        storedValue = result;
+        result = calculate(storedValue, operator, currentInput);
+        display.textContent = result;
+
         storedValue = "";
-        currentOperator = null;
+        currentInput = "";
+
+        operator = null;
+      } else if (currentInput && storedValue && operator) {
+        //        displayExpression.textContent += currentInput;
+        result = calculate(storedValue, operator, currentInput);
+        if (typeof Number(result) !== number) {
+        }
+        display.textContent = result;
+
+        storedValue = "";
+        currentInput = "";
+
+        operator = null;
+      }
+      break;
+    case "±":
+      // not only numbers
+
+      // handle +/- with no input & result several presses
+      /* 
+    +/- => -0
+    number & operator & number & +/- => -num2
+    number & +/- =>
+*/
+      if (
+        currentInput &&
+        !displayExpression.textContent.endsWith(`${operator} `)
+      ) {
+        if (currentInput.startsWith("-")) {
+          currentInput = currentInput.slice(1);
+        } else {
+          currentInput = "-" + currentInput;
+        }
+        display.textContent = currentInput;
+
+        let arr = displayExpression.textContent.split(" ");
+        arr[arr.length - 1] = currentInput;
+        displayExpression.textContent = arr.join(" ");
+      } else if (
+        currentInput &&
+        displayExpression.textContent.endsWith(`${operator} `)
+      ) {
+        if (currentInput.startsWith("-")) {
+          currentInput = currentInput.slice(1);
+        } else {
+          currentInput = "-" + currentInput;
+        }
+        display.textContent = currentInput;
+
+        let arr = displayExpression.textContent.split(" ");
+        arr[arr.length - 2] = currentInput;
+        displayExpression.textContent = arr.join(" ");
+      } /* else if (result && currentInput === "") {
+        currentInput = "-0";
+        display.textContent = currentInput;
+      } */
+      break;
+    case "←":
+    case "Backspace":
+      // only numbers
+      if (
+        currentInput.length > 1 &&
+        !displayExpression.textContent.endsWith(`${operator} `)
+      ) {
+        currentInput = currentInput.slice(0, -1);
+        display.textContent = currentInput;
+        displayExpression.textContent = displayExpression.textContent.slice(
+          0,
+          -1
+        );
+      } else if (
+        currentInput.length == 1 &&
+        !displayExpression.textContent.endsWith(`${operator} `)
+      ) {
+        currentInput = "";
+        display.textContent = "0";
+        displayExpression.textContent = displayExpression.textContent.slice(
+          0,
+          -1
+        );
+      }
+      break;
+    case ".":
+      if (
+        currentInput &&
+        !currentInput.includes(".") &&
+        !displayExpression.textContent.endsWith(`${operator} `)
+      ) {
+        currentInput += ".";
+        display.textContent = currentInput;
+        displayExpression.textContent += `${value}`;
+      } else if (!currentInput.includes(".")) {
+        currentInput = "0.";
+        display.textContent = currentInput;
+        displayExpression.textContent += `${currentInput}`;
       }
       break;
     default:
-      console.error("Unknown button:", button);
+      console.log("Unknown button:", value);
   }
 }
 
@@ -105,38 +281,26 @@ function calculate(firstNum, operator, secondNum) {
   const num2 = parseFloat(secondNum);
   switch (operator) {
     case "+":
-      return add(num1, num2).toString();
+      return add(num1, num2);
     case "-":
-      return subtract(num1, num2).toString();
+      return subtract(num1, num2);
     case "*":
-      return multiply(num1, num2).toString();
+      return multiply(num1, num2);
     case "/":
-      return divide(num1, num2).toString();
+      if (num2 === 0 || num2 === -0) {
+        return "Oops! Division by 0!";
+      } else return divide(num1, num2);
     default:
       return "Error";
   }
 }
 
-/*
-    what should event listener do?
-        get value
-        evaluate value
-        number -> operator -> number -> submit BUT break on AC
-        . is a number
-        +/- is a sign, can be pressed whenever and next number will be neg
-        % makes firstNum / 100 or makes second num = n % of first num
-        assign value
-        call function with values
-        validate event against order
-    */
-
 controlsContainer.addEventListener("click", (event) => {
   const buttonValue = event.target.textContent;
   handleButtonPress(buttonValue);
-
-  // display number request in results
-
-  console.log(buttonValue);
 });
 
-// when to remove the event listeners?     button.removeEventListener("click", handleButtonPress);
+document.addEventListener("keyup", (event) => {
+  const buttonValue = event.key;
+  handleButtonPress(buttonValue);
+});
