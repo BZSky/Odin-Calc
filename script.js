@@ -53,7 +53,7 @@ function handleCalculation(
 ) {
   prevOperator = passedOperator;
   operator = passedValue;
-  if (passedResult) {
+  if (passedResult !== "") {
     storedValue = passedResult;
   }
   result = calculate(storedValue, prevOperator, passedCurrentInput);
@@ -159,28 +159,16 @@ function handleButtonPress(value) {
       if (value == "Enter") {
         value = "=";
       }
-      if (displayExpression.textContent.endsWith(`${operator} `)) {
-        if (repeatInput) {
-          currentInput = repeatInput;
-          value = operator;
-          displayExpression.textContent += `${currentInput}`;
-          handleCalculation(value, currentInput, operator, result);
-        } else if (storedValue && currentInput) {
-          repeatInput = currentInput;
-          currentInput = storedValue;
-          value = operator;
-          displayExpression.textContent = displayExpression.textContent.slice(
-            0,
-            -3
-          );
-          handleCalculation(value, currentInput, operator, result);
-          displayExpression.textContent += `${repeatInput}`;
-        }
-      } else if (result && !currentInput) {
+      if (result && !currentInput && !repeatInput) {
         value = operator;
-        currentInput = storedValue;
+        currentInput = result;
         repeatInput = currentInput;
-        displayExpression.textContent += ` ${operator} ${currentInput}`;
+        displayExpression.textContent += currentInput;
+        handleCalculation(value, currentInput, operator, result);
+      } else if (repeatInput) {
+        currentInput = repeatInput;
+        value = operator;
+        displayExpression.textContent += currentInput;
         handleCalculation(value, currentInput, operator, result);
       } else if (currentInput && !storedValue && operator) {
         storedValue = currentInput;
@@ -194,14 +182,6 @@ function handleButtonPress(value) {
       }
       break;
     case "±":
-      // not only numbers
-
-      // handle +/- with no input & result several presses
-      /* 
-    +/- => -0
-    number & operator & number & +/- => -num2
-    number & +/- =>
-*/
       if (
         currentInput &&
         !displayExpression.textContent.endsWith(`${operator} `)
@@ -216,28 +196,10 @@ function handleButtonPress(value) {
         let arr = displayExpression.textContent.split(" ");
         arr[arr.length - 1] = currentInput;
         displayExpression.textContent = arr.join(" ");
-      } else if (
-        currentInput &&
-        displayExpression.textContent.endsWith(`${operator} `)
-      ) {
-        if (currentInput.startsWith("-")) {
-          currentInput = currentInput.slice(1);
-        } else {
-          currentInput = "-" + currentInput;
-        }
-        display.textContent = currentInput;
-
-        let arr = displayExpression.textContent.split(" ");
-        arr[arr.length - 2] = currentInput;
-        displayExpression.textContent = arr.join(" ");
-      } /* else if (result && currentInput === "") {
-        currentInput = "-0";
-        display.textContent = currentInput;
-      } */
+      }
       break;
     case "←":
     case "Backspace":
-      // only numbers
       if (
         currentInput.length > 1 &&
         !displayExpression.textContent.endsWith(`${operator} `)
