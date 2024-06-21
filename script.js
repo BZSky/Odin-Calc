@@ -1,6 +1,7 @@
 const controlsContainer = document.querySelector(".controls-container");
 
 let currentInput = "";
+let repeatInput = "";
 let prevOperator = null;
 let operator = null;
 let storedValue = "";
@@ -25,29 +26,53 @@ const divide = function (a, b) {
   return a / b;
 };
 
-const sumArr = function (arr) {
-  return arr.reduce((acc, item) => acc + item, 0);
-};
+function calculate(firstNum, operator, secondNum) {
+  const num1 = parseFloat(firstNum);
+  const num2 = parseFloat(secondNum);
+  switch (operator) {
+    case "+":
+      return add(num1, num2);
+    case "-":
+      return subtract(num1, num2);
+    case "*":
+      return multiply(num1, num2);
+    case "/":
+      if (num2 === 0 || num2 === -0) {
+        return "Oops! Division by 0!";
+      } else return divide(num1, num2);
+    default:
+      return "Error";
+  }
+}
 
-const multiplyArr = function (arr) {
-  return arr.reduce((acc, item) => acc * item);
-};
+function handleCalculation(
+  passedValue,
+  passedCurrentInput,
+  passedOperator,
+  passedResult
+) {
+  prevOperator = passedOperator;
+  operator = passedValue;
+  if (passedResult) {
+    storedValue = passedResult;
+  }
+  result = calculate(storedValue, prevOperator, passedCurrentInput);
+  if (result.toString().length > 21) {
+    result = parseFloat(parseFloat(result).toPrecision(5));
+  }
+  display.textContent = result;
+  displayExpression.textContent += ` ${operator} `;
+  handleDisplayExpression(displayExpression.textContent);
 
-const power = function (a, b) {
-  return a ** b;
-};
+  currentInput = "";
+}
 
-const factorial = function (num) {
-  let rval = 1;
-  for (let i = 2; i <= num; i++) rval = rval * i;
-  return rval;
-};
-
-function handleDisplayExpression(value) {
-  /* TODO
-   operator = save 0 & operator
-    number -> operator -> number -> operator = calculate prev numbers and save result as stored value & new operator 
-      */
+function handleDisplayExpression(expression) {
+  while (expression.length > 60) {
+    let arr = expression.split(" ");
+    expression = arr.slice(2).join(" ");
+  }
+  displayExpression.textContent = expression;
 }
 
 function handleButtonPress(value) {
@@ -62,16 +87,28 @@ function handleButtonPress(value) {
     case "7":
     case "8":
     case "9":
-      //      if (currentInput === "-0") {
-      //        currentInput = "-";
-      //      }
-      if (currentInput.length < 9 && operator != "=") {
+      if (currentInput === "0" && !operator) {
+        currentInput = value;
+        display.textContent = currentInput;
+        displayExpression.textContent = `${currentInput}`;
+      } else if (currentInput === "-0") {
+        currentInput = `-${value}`;
+        display.textContent = currentInput;
+        displayExpression.textContent = `${currentInput}`;
+      } else if (repeatInput) {
+        repeatInput = "";
+        currentInput += value;
+        display.textContent = currentInput;
+        displayExpression.textContent += `${value}`;
+      } else if (currentInput.length < 15) {
         currentInput += value;
         display.textContent = currentInput;
         displayExpression.textContent += `${value}`;
       }
+      handleDisplayExpression(displayExpression.textContent);
       break;
     case "+":
+    case "−":
     case "-":
     case "×":
     case "*":
@@ -81,74 +118,29 @@ function handleButtonPress(value) {
         value = "*";
       } else if (value == "÷") {
         value = "/";
+      } else if (value == "−") {
+        value = "-";
       }
-      if (!prevOperator) {
-        if (result && storedValue) {
-          prevOperator = operator;
-          operator = value;
-          storedValue = result;
-          result = calculate(storedValue, prevOperator, currentInput);
-          if (result.toString().length > 9) {
-            result = parseFloat(result).toPrecision(4);
-          }
-          display.textContent = result;
-          displayExpression.textContent += ` ${operator} `;
-
-          currentInput = "";
-        } else if (storedValue && currentInput) {
-          prevOperator = operator;
-          operator = value;
-          result = calculate(storedValue, prevOperator, currentInput);
-          if (result.toString().length > 9) {
-            result = parseFloat(result).toPrecision(4);
-          }
-          display.textContent = result;
-          displayExpression.textContent += ` ${operator} `;
-
-          currentInput = "";
-        } else if (currentInput) {
-          storedValue = currentInput;
-          operator = value;
-          displayExpression.textContent += ` ${operator} `;
-
-          currentInput = "";
-        } else if (displayExpression.textContent.endsWith(`${operator} `)) {
-          let arr = displayExpression.textContent.split(" ");
-          displayExpression.textContent = arr.slice(0, -2).join(" ");
-          operator = value;
-          displayExpression.textContent += ` ${operator} `;
-        }
-      } else if (currentInput) {
-        if (result && storedValue) {
-          prevOperator = operator;
-          operator = value;
-          storedValue = result;
-          result = calculate(storedValue, prevOperator, currentInput);
-          if (result.toString().length > 9) {
-            result = parseFloat(result).toPrecision(4);
-          }
-          currentInput = "";
-
-          display.textContent = result;
-          displayExpression.textContent += ` ${operator} `;
-        } else if (storedValue) {
-          prevOperator = operator;
-          operator = value;
-          result = calculate(storedValue, prevOperator, currentInput);
-          if (result.toString().length > 9) {
-            result = parseFloat(result).toPrecision(4);
-          }
-          currentInput = "";
-
-          display.textContent = result;
-          displayExpression.textContent += ` ${operator} `;
-        }
-      } else if (displayExpression.textContent.endsWith(`${operator} `)) {
-        // rewrite with str.slice
-        let arr = displayExpression.textContent.split(" ");
-        displayExpression.textContent = arr.slice(0, -2).join(" ");
+      if (displayExpression.textContent.endsWith(`${operator} `)) {
+        displayExpression.textContent = displayExpression.textContent.slice(
+          0,
+          -3
+        );
         operator = value;
         displayExpression.textContent += ` ${operator} `;
+      } else if (currentInput && !storedValue) {
+        storedValue = currentInput;
+        operator = value;
+        repeatInput = currentInput;
+        displayExpression.textContent += ` ${operator} `;
+        currentInput = "";
+      } else if (!currentInput && !storedValue) {
+        storedValue = "0";
+        operator = value;
+        display.textContent = storedValue;
+        displayExpression.textContent = `${storedValue} ${operator} `;
+      } else {
+        handleCalculation(value, currentInput, operator, result);
       }
       break;
     case "AC":
@@ -160,48 +152,45 @@ function handleButtonPress(value) {
       operator = null;
       display.textContent = "0";
       displayExpression.textContent = "";
+      repeatInput = "";
       break;
     case "=":
-      /*    number & operator & = & = & = ...  => result of num1 + num1 then repeat + num1 with result
-    number & operator & number & = => result of num1 + num2 then repeat + num2 with result
-    number & operator & number & operator & ... => result of num1 + num2, etc
-*/
-      if (!displayExpression.textContent.endsWith(`${operator} `)) {
-        if (result && storedValue) {
-          prevOperator = operator;
-          operator = value;
-          storedValue = result;
-          result = calculate(storedValue, prevOperator, currentInput);
-          if (result.toString().length > 9) {
-            result = parseFloat(result).toPrecision(4);
-          }
-          display.textContent = result;
-          displayExpression.textContent += ` ${operator} `;
-
-          currentInput = "";
+    case "Enter":
+      if (value == "Enter") {
+        value = "=";
+      }
+      if (displayExpression.textContent.endsWith(`${operator} `)) {
+        if (repeatInput) {
+          currentInput = repeatInput;
+          value = operator;
+          displayExpression.textContent += `${currentInput}`;
+          handleCalculation(value, currentInput, operator, result);
         } else if (storedValue && currentInput) {
-          prevOperator = operator;
-          operator = value;
-          result = calculate(storedValue, prevOperator, currentInput);
-          if (result.toString().length > 9) {
-            result = parseFloat(result).toPrecision(4);
-          }
-          display.textContent = result;
-          displayExpression.textContent += ` ${operator} `;
-
-          currentInput = "";
-        } else if (currentInput) {
-          storedValue = currentInput;
-          operator = value;
-          displayExpression.textContent += ` ${operator} `;
-
-          currentInput = "";
-        } else if (displayExpression.textContent.endsWith(`${operator} `)) {
-          let arr = displayExpression.textContent.split(" ");
-          displayExpression.textContent = arr.slice(0, -2).join(" ");
-          operator = value;
-          displayExpression.textContent += ` ${operator} `;
+          repeatInput = currentInput;
+          currentInput = storedValue;
+          value = operator;
+          displayExpression.textContent = displayExpression.textContent.slice(
+            0,
+            -3
+          );
+          handleCalculation(value, currentInput, operator, result);
+          displayExpression.textContent += `${repeatInput}`;
         }
+      } else if (result && !currentInput) {
+        value = operator;
+        currentInput = storedValue;
+        repeatInput = currentInput;
+        displayExpression.textContent += ` ${operator} ${currentInput}`;
+        handleCalculation(value, currentInput, operator, result);
+      } else if (currentInput && !storedValue && operator) {
+        storedValue = currentInput;
+        repeatInput = currentInput;
+        value = operator;
+        handleCalculation(value, currentInput, operator, result);
+      } else if (currentInput && storedValue) {
+        repeatInput = currentInput;
+        value = operator;
+        handleCalculation(value, currentInput, operator, result);
       }
       break;
     case "±":
@@ -264,6 +253,7 @@ function handleButtonPress(value) {
         !displayExpression.textContent.endsWith(`${operator} `)
       ) {
         currentInput = "";
+        //maybe show back the previous result?
         display.textContent = "0";
         displayExpression.textContent = displayExpression.textContent.slice(
           0,
@@ -280,7 +270,7 @@ function handleButtonPress(value) {
         currentInput += ".";
         display.textContent = currentInput;
         displayExpression.textContent += `${value}`;
-      } else if (!currentInput.includes(".")) {
+      } else if (!currentInput.includes(".") && operator != "=") {
         currentInput = "0.";
         display.textContent = currentInput;
         displayExpression.textContent += `${currentInput}`;
@@ -288,25 +278,6 @@ function handleButtonPress(value) {
       break;
     default:
       console.log("Unknown button:", value);
-  }
-}
-
-function calculate(firstNum, operator, secondNum) {
-  const num1 = parseFloat(firstNum);
-  const num2 = parseFloat(secondNum);
-  switch (operator) {
-    case "+":
-      return add(num1, num2);
-    case "-":
-      return subtract(num1, num2);
-    case "*":
-      return multiply(num1, num2);
-    case "/":
-      if (num2 === 0 || num2 === -0) {
-        return "Oops! Division by 0!";
-      } else return divide(num1, num2);
-    default:
-      return "Error";
   }
 }
 
