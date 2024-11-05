@@ -248,7 +248,10 @@ controlsContainer.addEventListener("click", (event) => {
   handleButtonPress(buttonValue);
 });
 
-document.addEventListener("keyup", (event) => {
+document.addEventListener("keydown", (event) => {
   const buttonValue = event.key;
+  if (buttonValue === "Escape" || buttonValue === "Enter") {
+    event.preventDefault();
+  }
   handleButtonPress(buttonValue);
 });
