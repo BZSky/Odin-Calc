@@ -26,6 +26,10 @@ const divide = function (a, b) {
   return a / b;
 };
 
+const calcPercentage = function (a, b) {
+  return parseFloat(parseFloat((a / 100) * b).toPrecision(5));
+};
+
 function calculate(firstNum, operator, secondNum) {
   const num1 = parseFloat(firstNum);
   const num2 = parseFloat(secondNum);
@@ -40,6 +44,8 @@ function calculate(firstNum, operator, secondNum) {
       if (num2 === 0 || num2 === -0) {
         return "Oops! Division by 0!";
       } else return divide(num1, num2);
+    case "%":
+      return calcPercentage(num1, num2);
     default:
       return "Error";
   }
@@ -236,6 +242,72 @@ function handleButtonPress(value) {
         currentInput = "0.";
         display.textContent = currentInput;
         displayExpression.textContent += `${currentInput}`;
+      }
+      break;
+    case "%%":
+      if (storedValue && currentInput) {
+        // Use the stored value as the basis and convert currentInput into a percentage of it.
+        const percentageValue = calcPercentage(
+          parseFloat(storedValue),
+          parseFloat(currentInput)
+        );
+        currentInput = percentageValue.toString();
+        display.textContent = currentInput;
+        // Update the expression display by replacing the last token with the calculated percentage.
+        let parts = displayExpression.textContent.trim().split(" ");
+        parts[parts.length - 1] = currentInput;
+        displayExpression.textContent = parts.join(" ");
+      } else if (currentInput) {
+        // Fallback: if there's no stored value, simply convert current input into its percentage.
+        currentInput = (parseFloat(currentInput) / 100).toString();
+        display.textContent = currentInput;
+        let parts = displayExpression.textContent.trim().split(" ");
+        parts[parts.length - 1] = currentInput;
+        displayExpression.textContent = parts.join(" ");
+      } else if (result) {
+        // If no current input but we have a result, update that instead.
+        result = (parseFloat(result) / 100).toString();
+        display.textContent = result;
+        let parts = displayExpression.textContent.trim().split(" ");
+        parts[parts.length - 1] = result;
+        displayExpression.textContent = parts.join(" ");
+        currentInput = result;
+      }
+      break;
+    case "%":
+      // If an operator was pressed and we have a stored value and a current input,
+      // treat the current input as a percentage of the stored value.
+      if (operator && storedValue && currentInput) {
+        // Calculate percentage: storedValue * (currentInput / 100)
+        const pctValue = calcPercentage(
+          parseFloat(storedValue),
+          parseFloat(currentInput)
+        );
+        currentInput = pctValue.toString();
+        display.textContent = currentInput;
+        // Update the expression display: replace the last token with the calculated percentage
+        let tokens = displayExpression.textContent.trim().split(" ");
+        tokens[tokens.length - 1] = currentInput;
+        displayExpression.textContent = tokens.join(" ");
+      }
+      // If there is no stored value but there's a current input, apply the unary conversion.
+      else if (currentInput) {
+        currentInput = (parseFloat(currentInput) / 100).toString();
+        display.textContent = currentInput;
+        let tokens = displayExpression.textContent.trim().split(" ");
+        tokens[tokens.length - 1] = currentInput;
+        displayExpression.textContent = tokens.join(" ");
+      }
+      // If there is no current input but a result exists, treat the result as the operand.
+      else if (result) {
+        // In this case, consider result as the number to be converted.
+        result = (parseFloat(result) / 100).toString();
+        currentInput = result;
+        storedValue = result;
+        display.textContent = result;
+        let tokens = displayExpression.textContent.trim().split(" ");
+        tokens[tokens.length - 1] = result;
+        displayExpression.textContent = tokens.join(" ");
       }
       break;
     default:
